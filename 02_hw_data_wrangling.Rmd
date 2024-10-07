@@ -44,12 +44,20 @@ Use `dplyr` functions to create a table with the number of candidates in each ty
  **Rubric**: 2pt for loading the data (autograder); 1pt for describing the number of candidates (PDF); 3pts for creating the table (autograder); 2pt for using `kable()` to nicely format the output (PDF)
 
 ## Answer 1
-fb_ads <- read_csv()
-num_candidates <- n_distinct(fb_ads$candidate_name)
-incumbency_table <- fb_ads %>%
-    group_by(incumbency_status) %>%
-    summarise (num_candidates = n_distinct(candidates_name))
+```{r}
+library(dplyr)
+library(readr)
+library(knitr)
+fb_ads <- read_csv("data/fb_ads.csv")
+fb_ads
+
+num_candidates <- n_distinct(fb_ads$cand_name)
+incumbency_table <- fb_ads |>
+    group_by(incumbency) |>
+    summarise (num_candidates = n_distinct(cand_name))
 knitr::kable(incumbency_table)
+
+```
 
 
 \newpage
@@ -69,16 +77,20 @@ In the writeup, describe which type of candidate sponsored the most promoting ad
  **Rubric**: 3pts for creating `party_incumbent_promote` correctly (autograder); 2pt for a nicely formatted table (PDF); 1pt for changing the column names of the output table (PDF); 1pt for correctly identifying the type of candidate with highest average (PDF)
 
 ## Answer 2
-filtered_data <- 
-  filter(race_type %in% c("US House", "US Senate"))
+```{r}
+library(dplyr)
+library(knitr)
+
+filtered_fb_ads <- fb_ads |>
+  filter(office %in% c("US House", "US Senate"))
   
-party_incumbent_promote <- filtered_data %>%
-  group_by(party, incumbency_status) %>%
-  summarise(promote_prop = mean(ad_tone_promote, na.rm = TRUE)) %>%
-  ungroup()
+party_incumbent_promote <- filtered_fb_ads |>
+  group_by(party, incumbency) |>
+  summarise(promote_prop = mean(ad_tone_promote, na.rm = TRUE))
   
 knitr::kable(party_incumbent_promote, digits = 3,
   col.names = c("Party", "Incumbency Status", "Average Promote Proportion))
+```
 
 
 \newpage
@@ -93,16 +105,22 @@ Create a histogram of this variable for just the US House races. Save the ggplot
  **Rubric:** 2pt for creating the new variable (autograder); 3pts for creating the histogram object (autograder); 2pts for answering the question about the histogram (PDF)
 
 ## Answer 3
-fb_ads <- 
-  mutate(impressions_millions = impressions / 1e6)
-plot_q3 <- fb_ads %>%
-  filter(race_type == "US House") %>%
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+fb_ads <- fb_ads |>
+  mutate(impressions_millions = impressions * 1e6)
+
+
+plot_q3 <- fb_ads |>
+  filter(office == "US House") |>
   ggplot(aes(x = impressions_millions)) + 
-  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  geom_histogram(n = 15, fill = "skyblue", color = "black") +
   labs(title = "Distribution of Facebook Ad Impressions (in Millions) for US House Races", x = "Ad Impressions (in Millions)", y = "Frequency")
 print(plot_q3)
-
-
+```
+There were less than 10 million ad impressions on Facebook.
 \newpage
 
 ## Question 4 (13 points)
@@ -123,22 +141,21 @@ You do not need to exactly match the labels, but you should have informative lab
  **Rubric:** 3pts for correct axes (autograder); 3pts for correct data fed into `ggplot` (autograder); 3pts for the correct ordering of the y-axis (PDF); 3pts for fill being mapped to `party` (autograder); 1pt for plot being in knitted output and having informative labels (PDF)
 
 ## Answer 4
-fb_ads <- 
-  mutate(cand_name_last = sub(".*\\s", "", candidate_name))
-
-top_house_candidates <- fb_ads %>%
-  filter(race_type == "US House") %>%
-  arrange(desc(impressions_millions)) %>%
+```{r}
+library(dplyr)
+library(ggplot2)
+top_cand <- fb_ads |>
+  filter(office == "US House") |>
+  arrange(desc(impressions_millions)) |>
   slice_head(n = 15)
 
-fb_top_plot <- ggplot(top_house_candidates, aes(x = impressions_millions, y = reorder(cand_name_last, impressions_millions), fill = party)) +
+fb_top_plot <- ggplot(top_cand, aes(x = impressions_millions, y = reorder(cand_name_last, impressions_millions), fill = party)) +
   geom_bar(stat = "identity") +
   labs(title = "Top 15 US House Candidates by Facebook Ad Impressions",
        x = "Ad Impressions (in Millions)",
        y = "Candidate Last Name") +
   scale_fill_manual(values = c(R = "red", D = "blue")) +
   theme_minimal()
-
 fb_top_plot
 
 
